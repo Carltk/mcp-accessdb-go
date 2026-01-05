@@ -36,7 +36,11 @@ func getConn(dbPath string) (*sql.DB, error) {
 func main() {
 	cfg := LoadConfig()
 
-	// Setup logging to configured or default folder.
+	// Ensure directories exist
+	os.MkdirAll(cfg.LogDir, 0755)
+	os.MkdirAll(cfg.TmpDir, 0755)
+
+	// Setup logging to configured folder.
 	logPath := filepath.Join(cfg.LogDir, "mcp-accessdb-go.log")
 	f, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err == nil {

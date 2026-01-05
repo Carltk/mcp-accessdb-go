@@ -1,3 +1,8 @@
-# Directory where the server will save its log files.
-# Defaults to the system temp directory if not specified.
-logDir: "C:\\Users\\carl.DATAFUEL\\AppData\\Local\\Temp"
+# Directory for log files (e.g., ./log or absolute path)
+logDir: "./log"
+
+# Directory for temporary files used during processing (defaults to system %TEMP%)
+tmpDir: "C:\\Users\\carl.DATAFUEL\\AppData\\Local\\Temp"
+
+# Enable debug mode to log all transactions
+debug: true

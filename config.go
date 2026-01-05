@@ -10,13 +10,15 @@ import (
 
 type Config struct {
 	LogDir string `yaml:"logDir"`
+	TmpDir string `yaml:"tmpDir"`
 	Debug  bool   `yaml:"debug"`
 }
 
 func LoadConfig() *Config {
 	// Default configuration
 	cfg := &Config{
-		LogDir: os.TempDir(),
+		LogDir: "./log",
+		TmpDir: os.TempDir(),
 		Debug:  false,
 	}
 
@@ -37,10 +39,14 @@ func LoadConfig() *Config {
 	}
 
 	// Resolve relative paths based on the executable directory
+	exePath, _ := os.Executable()
+	exeDir := filepath.Dir(exePath)
+
 	if !filepath.IsAbs(cfg.LogDir) {
-		exePath, _ := os.Executable()
-		exeDir := filepath.Dir(exePath)
 		cfg.LogDir = filepath.Clean(filepath.Join(exeDir, cfg.LogDir))
+	}
+	if !filepath.IsAbs(cfg.TmpDir) {
+		cfg.TmpDir = filepath.Clean(filepath.Join(exeDir, cfg.TmpDir))
 	}
 
 	return cfg
