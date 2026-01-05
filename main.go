@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	_ "github.com/alexbrainman/odbc"
 	"github.com/metoro-io/mcp-golang"
@@ -32,10 +34,18 @@ func getConn(dbPath string) (*sql.DB, error) {
 }
 
 func main() {
+	// Setup logging to Windows Temp folder to avoid polluting the project directory.
+	logPath := filepath.Join(os.TempDir(), "mcp-accessdb-go.log")
+	f, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err == nil {
+		defer f.Close()
+		log.SetOutput(f)
+	}
+
 	server := mcp_golang.NewServer(stdio.NewStdioServerTransport(), mcp_golang.WithName("mcp-accessdb-go"))
 
 	// Query Tool
-	err := server.RegisterTool("query", "Execute a SELECT query on an Access97 database", func(args QueryArgs) (*mcp_golang.ToolResponse, error) {
+	err = server.RegisterTool("query", "Execute a SELECT query on an Access97 database", func(args QueryArgs) (*mcp_golang.ToolResponse, error) {
 		db, err := getConn(args.DbPath)
 		if err != nil {
 			return nil, err
@@ -130,6 +140,7 @@ func main() {
 	}
 
 	if err := server.Serve(); err != nil {
+		log.Printf("Server error: %v", err)
 		log.Fatal(err)
 	}
 }
