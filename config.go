@@ -34,5 +34,11 @@ func LoadConfig() *Config {
 		log.Printf("Error parsing config.yaml: %v. Using defaults.", err)
 	}
 
+	// Resolve relative paths based on the executable directory
+	if !filepath.IsAbs(cfg.LogDir) {
+		exeDir := filepath.Dir(exePath)
+		cfg.LogDir = filepath.Join(exeDir, cfg.LogDir)
+	}
+
 	return cfg
 }
