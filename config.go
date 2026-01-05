@@ -39,7 +39,10 @@ func LoadConfig() *Config {
 	}
 
 	// Resolve relative paths based on the executable directory
-	exePath, _ := os.Executable()
+	exePath, err := os.Executable()
+	if err != nil {
+		return cfg
+	}
 	exeDir := filepath.Dir(exePath)
 
 	if !filepath.IsAbs(cfg.LogDir) {
