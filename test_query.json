@@ -1,0 +1,1 @@
+{"method": "tools/call", "params": {"name": "query", "arguments": {"dbPath": "D:/mydev/datafuel Winfms/DB/dfdbmain.mdb", "sql": "SELECT COUNT(*) as TestCount FROM FuelTrans WHERE FleetID LIKE '*test*'"}}, "jsonrpc": "2.0", "id": 1}

@@ -55,7 +55,11 @@ func registerTools(server *mcp_golang.Server, cfg *Config) {
 			results = append(results, m)
 		}
 
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("%+v", results))), nil
+		resp := mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("%+v", results)))
+		if cfg.Debug {
+			log.Printf("Tool 'query' result: %+v", resp)
+		}
+		return resp, nil
 	})
 
 	// Execute Tool
@@ -75,7 +79,11 @@ func registerTools(server *mcp_golang.Server, cfg *Config) {
 		}
 
 		affected, _ := res.RowsAffected()
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Rows affected: %d", affected))), nil
+		resp := mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Rows affected: %d", affected)))
+		if cfg.Debug {
+			log.Printf("Tool 'execute' result: %+v", resp)
+		}
+		return resp, nil
 	})
 
 	// List Tables Tool
@@ -87,7 +95,11 @@ func registerTools(server *mcp_golang.Server, cfg *Config) {
 		if err != nil {
 			return nil, err
 		}
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables))), nil
+		resp := mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables)))
+		if cfg.Debug {
+			log.Printf("Tool 'list_tables' result: %+v", resp)
+		}
+		return resp, nil
 	})
 
 	// List Fields / Schema Tool
@@ -99,6 +111,10 @@ func registerTools(server *mcp_golang.Server, cfg *Config) {
 		if err != nil {
 			return nil, err
 		}
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Schema for %s: %+v", args.TableName, schema))), nil
+		resp := mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Schema for %s: %+v", args.TableName, schema)))
+		if cfg.Debug {
+			log.Printf("Tool 'get_table_schema' result: %+v", resp)
+		}
+		return resp, nil
 	})
 }
