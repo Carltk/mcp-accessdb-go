@@ -16,6 +16,9 @@ mcp-accessdb
 *.swp
 *.swo
 
+# Log files
+log/
+
 # Project specific
 input.json
 output.txt
