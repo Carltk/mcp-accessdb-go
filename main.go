@@ -25,7 +25,9 @@ type ListTablesArgs struct {
 }
 
 func getConn(dbPath string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%s;", dbPath)
+	// For Access 97 MDB files, the older 32-bit driver is often required.
+	// We use the driver name specifically registered for MDB.
+	connStr := fmt.Sprintf("Driver={Microsoft Access Driver (*.mdb)};DBQ=%s;", dbPath)
 	return sql.Open("odbc", connStr)
 }
 
@@ -105,11 +107,12 @@ func main() {
 		}
 		defer db.Close()
 
-		// Access systemic table for MS Access is MSysObjects, but usually Type=1 and Flags=0 are user tables
-		rows, err := db.Query("SELECT Name FROM MSysObjects WHERE Type=1 AND Flags=0")
+		// For Access MDB, user tables are Type 1 and Flags 0 in MSysObjects
+		// We use a query that is generally compatible with Access 97+.
+		rows, err := db.Query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys*' AND Name NOT LIKE 'f_*'")
 		if err != nil {
-			// Fallback if MSysObjects access is denied (common in some drivers)
-			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent("Could not query MSysObjects. Try querying known table names.")), nil
+			// Fallback: Use standard ODBC call if possible or report error
+			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Error querying MSysObjects: %v. Note: You may need to grant 'Read Design' permissions on MSysObjects in the MDB file.", err))), nil
 		}
 		defer rows.Close()
 
