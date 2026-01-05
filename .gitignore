@@ -1,0 +1,26 @@
+# Binaries, plugins, libs
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.so
+mcp-accessdb
+
+# Testing
+*.test
+*.tmp
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+input.json
+output.txt
+error.txt
+debug_log.txt
+query_result.txt
+*.log
+config.yaml
