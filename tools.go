@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/metoro-io/mcp-golang"
 )
@@ -11,9 +12,12 @@ type ListFieldsArgs struct {
 	TableName string `json:"tableName" jsonschema:"required,description=Name of the table to inspect"`
 }
 
-func registerTools(server *mcp_golang.Server) {
+func registerTools(server *mcp_golang.Server, cfg *Config) {
 	// Query Tool
 	server.RegisterTool("query", "Execute a SELECT query on an Access97 database", func(args QueryArgs) (*mcp_golang.ToolResponse, error) {
+		if cfg.Debug {
+			log.Printf("Tool 'query' called with arguments: %+v", args)
+		}
 		db, err := getConn(args.DbPath)
 		if err != nil {
 			return nil, err
@@ -56,6 +60,9 @@ func registerTools(server *mcp_golang.Server) {
 
 	// Execute Tool
 	server.RegisterTool("execute", "Execute an INSERT, UPDATE, DELETE or CREATE statement", func(args UpdateArgs) (*mcp_golang.ToolResponse, error) {
+		if cfg.Debug {
+			log.Printf("Tool 'execute' called with arguments: %+v", args)
+		}
 		db, err := getConn(args.DbPath)
 		if err != nil {
 			return nil, err
@@ -73,6 +80,9 @@ func registerTools(server *mcp_golang.Server) {
 
 	// List Tables Tool
 	server.RegisterTool("list_tables", "List all user tables in the database using robust ADOX inspection", func(args ListTablesArgs) (*mcp_golang.ToolResponse, error) {
+		if cfg.Debug {
+			log.Printf("Tool 'list_tables' called with arguments: %+v", args)
+		}
 		tables, err := listAllTables(args.DbPath)
 		if err != nil {
 			return nil, err
@@ -82,6 +92,9 @@ func registerTools(server *mcp_golang.Server) {
 
 	// List Fields / Schema Tool
 	server.RegisterTool("get_table_schema", "List all fields and the primary key for a specific table", func(args ListFieldsArgs) (*mcp_golang.ToolResponse, error) {
+		if cfg.Debug {
+			log.Printf("Tool 'get_table_schema' called with arguments: %+v", args)
+		}
 		schema, err := getTableMetadata(args.DbPath, args.TableName)
 		if err != nil {
 			return nil, err

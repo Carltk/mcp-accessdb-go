@@ -46,7 +46,13 @@ func main() {
 
 	server := mcp_golang.NewServer(stdio.NewStdioServerTransport(), mcp_golang.WithName("mcp-accessdb-go"))
 
-	registerTools(server)
+	if cfg.Debug {
+		log.Printf("Debug mode enabled. Logging all tool requests and responses.")
+		// Add middleware to log tools if needed, but Metoro MCP should log errors to stderr by default.
+		// We'll log custom messages here.
+	}
+
+	registerTools(server, cfg)
 
 	if err := server.Serve(); err != nil {
 		log.Printf("Server error: %v", err)

@@ -10,12 +10,14 @@ import (
 
 type Config struct {
 	LogDir string `yaml:"logDir"`
+	Debug  bool   `yaml:"debug"`
 }
 
 func LoadConfig() *Config {
 	// Default configuration
 	cfg := &Config{
 		LogDir: os.TempDir(),
+		Debug:  false,
 	}
 
 	exePath, err := os.Executable()
