@@ -1,0 +1,3 @@
+# Directory where the server will save its log files.
+# Defaults to the system temp directory if not specified.
+logDir: "C:\\Users\\carl.DATAFUEL\\AppData\\Local\\Temp"

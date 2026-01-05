@@ -34,8 +34,10 @@ func getConn(dbPath string) (*sql.DB, error) {
 }
 
 func main() {
-	// Setup logging to Windows Temp folder to avoid polluting the project directory.
-	logPath := filepath.Join(os.TempDir(), "mcp-accessdb-go.log")
+	cfg := LoadConfig()
+
+	// Setup logging to configured or default folder.
+	logPath := filepath.Join(cfg.LogDir, "mcp-accessdb-go.log")
 	f, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err == nil {
 		defer f.Close()
