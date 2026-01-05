@@ -10,6 +10,9 @@ import (
 	_ "github.com/alexbrainman/odbc"
 	"github.com/metoro-io/mcp-golang"
 	"github.com/metoro-io/mcp-golang/transport/stdio"
+
+	"github.com/go-ole/go-ole"
+	"github.com/go-ole/go-ole/oleutil"
 )
 
 type QueryArgs struct {
@@ -113,31 +116,55 @@ func main() {
 
 	// List Tables Tool (Schema discovery)
 	err = server.RegisterTool("list_tables", "List all user tables in the database", func(args ListTablesArgs) (*mcp_golang.ToolResponse, error) {
-		db, err := getConn(args.DbPath)
+		ole.CoInitialize(0)
+		defer ole.CoUninitialize()
+
+		unknown, err := oleutil.CreateObject("ADOX.Catalog")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create ADOX object: %v", err)
 		}
-		defer db.Close()
+		catalog, _ := unknown.QueryInterface(ole.IID_IDispatch)
+		defer catalog.Release()
 
-		// Attempt discovery using MSysObjects (requires Read Design permissions)
-		rows, err := db.Query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys*' AND Name NOT LIKE 'f_*'")
-		if err == nil {
-			defer rows.Close()
-			var tables []string
-			for rows.Next() {
-				var name string
-				if err := rows.Scan(&name); err == nil {
-					tables = append(tables, name)
-				}
+		// Try both common providers
+		providers := []string{
+			"Microsoft.Jet.OLEDB.4.0",
+			"Microsoft.ACE.OLEDB.12.0",
+			"Microsoft.ACE.OLEDB.16.0",
+		}
+
+		connected := false
+		for _, p := range providers {
+			connStr := fmt.Sprintf("Provider=%s;Data Source=%s;", p, args.DbPath)
+			_, err = oleutil.PutProperty(catalog, "ActiveConnection", connStr)
+			if err == nil {
+				connected = true
+				break
 			}
-			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables))), nil
 		}
 
-		// Fallback: If MSysObjects is restricted, use the driver's own metadata if possible.
-		// Since database/sql doesn't expose SQLTables directly, and we can't easily cast to internal odbc.Conn types,
-		// we'll try a common Access-specific probing logic or report the permission issue clearly.
-		log.Printf("MSysObjects access denied: %v. Database is connected.", err)
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Connected to database, but MSysObjects is restricted. You may need to grant 'Read Design' permissions on system tables in Access. Error: %v", err))), nil
+		if !connected {
+			return nil, fmt.Errorf("failed to connect to database via ADOX: connection parameters restricted or driver missing")
+		}
+
+		tablesValue := oleutil.MustGetProperty(catalog, "Tables").ToIDispatch()
+		defer tablesValue.Release()
+
+		countVar := oleutil.MustGetProperty(tablesValue, "Count")
+		count := int(countVar.Val)
+
+		var tables []string
+		for i := 0; i < count; i++ {
+			table := oleutil.MustGetProperty(tablesValue, "Item", i).ToIDispatch()
+			name := oleutil.MustGetProperty(table, "Name").ToString()
+			typ := oleutil.MustGetProperty(table, "Type").ToString()
+			if typ == "TABLE" {
+				tables = append(tables, name)
+			}
+			table.Release()
+		}
+
+		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables))), nil
 	})
 	if err != nil {
 		log.Fatal(err)
