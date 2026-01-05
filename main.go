@@ -119,23 +119,25 @@ func main() {
 		}
 		defer db.Close()
 
-		// For Access MDB, user tables are Type 1 and Flags 0 in MSysObjects
-		// We use a query that is generally compatible with Access 97+.
+		// Attempt discovery using MSysObjects (requires Read Design permissions)
 		rows, err := db.Query("SELECT Name FROM MSysObjects WHERE Type=1 AND Name NOT LIKE 'MSys*' AND Name NOT LIKE 'f_*'")
-		if err != nil {
-			// Fallback: Use standard ODBC call if possible or report error
-			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Error querying MSysObjects: %v. Note: You may need to grant 'Read Design' permissions on MSysObjects in the MDB file.", err))), nil
-		}
-		defer rows.Close()
-
-		var tables []string
-		for rows.Next() {
-			var name string
-			if err := rows.Scan(&name); err == nil {
-				tables = append(tables, name)
+		if err == nil {
+			defer rows.Close()
+			var tables []string
+			for rows.Next() {
+				var name string
+				if err := rows.Scan(&name); err == nil {
+					tables = append(tables, name)
+				}
 			}
+			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables))), nil
 		}
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Tables: %v", tables))), nil
+
+		// Fallback: If MSysObjects is restricted, use the driver's own metadata if possible.
+		// Since database/sql doesn't expose SQLTables directly, and we can't easily cast to internal odbc.Conn types,
+		// we'll try a common Access-specific probing logic or report the permission issue clearly.
+		log.Printf("MSysObjects access denied: %v. Database is connected.", err)
+		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("Connected to database, but MSysObjects is restricted. You may need to grant 'Read Design' permissions on system tables in Access. Error: %v", err))), nil
 	})
 	if err != nil {
 		log.Fatal(err)
